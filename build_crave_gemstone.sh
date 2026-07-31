@@ -22,8 +22,29 @@ require_command() {
 require_command repo
 require_command git
 require_command tee
+
+install_jq_if_missing() {
+  if command -v jq >/dev/null 2>&1; then
+    return
+  fi
+
+  echo "jq is missing; installing it in the temporary Crave build environment"
+
+  if command -v sudo >/dev/null 2>&1; then
+    sudo -n apt-get update
+    sudo -n apt-get install -y --no-install-recommends jq
+  elif [[ "$(id -u)" -eq 0 ]]; then
+    apt-get update
+    apt-get install -y --no-install-recommends jq
+  else
+    echo "ERROR: jq is missing and package installation is unavailable" >&2
+    exit 1
+  fi
+}
+
 if [[ "${UPLOAD_GITHUB_RELEASE}" == "1" ]]; then
   require_command curl
+  install_jq_if_missing
   require_command jq
   require_command sha256sum
   require_command stat

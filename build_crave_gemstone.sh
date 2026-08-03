@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -eo pipefail
 
 ROM_MANIFEST_URL="https://github.com/IamCharvik/local_mf.git"
 ROM_MANIFEST_BRANCH="main"

@@ -115,8 +115,20 @@ for required_path in \
 done
 
 echo "==> Preparing ${DEVICE}"
+export USE_CCACHE=0
+export CCACHE_DISABLE=1
+unset CCACHE_EXEC
+
+set +e
 source build/envsetup.sh
+envsetup_status=$?
 breakfast "${DEVICE}" userdebug
+breakfast_status=$?
+set -e
+
+if [[ "${envsetup_status}" -ne 0 || "${breakfast_status}" -ne 0 ]]; then
+  echo "WARNING: Android environment setup returned envsetup=${envsetup_status}, breakfast=${breakfast_status}; continuing without ccache"
+fi
 
 echo "==> Building ${DEVICE}"
 mka bacon

@@ -9,6 +9,8 @@ DEVICE="gemstone"
 GITHUB_RELEASE_REPO="IamCharvik/roms"
 UPLOAD_GITHUB_RELEASE="${UPLOAD_GITHUB_RELEASE:-0}"
 UPLOAD_GOFILE="${UPLOAD_GOFILE:-1}"
+# Keep only the current build log in this working directory.
+rm -f -- "build_${DEVICE}_"*.log
 LOG_FILE="build_${DEVICE}_$(date +%Y%m%d_%H%M%S).log"
 
 exec > >(tee -a "${LOG_FILE}") 2>&1

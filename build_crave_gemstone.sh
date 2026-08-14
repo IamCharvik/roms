@@ -105,7 +105,6 @@ echo "==> Syncing sources through Crave"
 
 for required_path in \
   device/xiaomi/gemstone \
-  device/xiaomi/sm6375-common \
   vendor/xiaomi/gemstone \
   vendor/xiaomi/sm6375-common \
   kernel/xiaomi/sm6375 \

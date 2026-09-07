@@ -4,8 +4,12 @@ set -eo pipefail
 
 ROM_MANIFEST_URL="https://github.com/IamCharvik/local_mf.git"
 ROM_MANIFEST_BRANCH="main"
-ROM_BRANCH="16.0"
+ROM_BRANCH="XOS-16.2"
 DEVICE="gemstone"
+# halogenOS (XOS) lunch target: aosp_<device>-bp4a-userdebug
+XOS_TARGET="aosp_${DEVICE}-bp4a-userdebug"
+# Set NOCLEAN=1 to skip 'm clean' before building
+NOCLEAN="${NOCLEAN:-0}"
 GITHUB_RELEASE_REPO="IamCharvik/roms"
 UPLOAD_GITHUB_RELEASE="${UPLOAD_GITHUB_RELEASE:-0}"
 UPLOAD_GOFILE="${UPLOAD_GOFILE:-1}"
@@ -78,15 +82,17 @@ handle_error() {
 
 trap handle_error ERR
 
-echo "==> Initializing crDroid ${ROM_BRANCH}"
+echo "==> Removing stale local manifests from reused clients"
+rm -rf .repo/local_manifests
+
+echo "==> Initializing halogenOS (XOS) ${ROM_BRANCH}"
 repo init \
-  -u https://github.com/crdroidandroid/android.git \
+  -u https://github.com/halogenOS/android_manifest.git \
   -b "${ROM_BRANCH}" \
   --git-lfs \
   --depth=1
 
 echo "==> Installing public device manifest"
-rm -rf .repo/local_manifests
 git clone \
   --depth=1 \
   --branch "${ROM_MANIFEST_BRANCH}" \
@@ -99,6 +105,9 @@ test -f .repo/local_manifests/local_manifest.xml || {
 }
 
 echo "Manifest revision: $(git -C .repo/local_manifests rev-parse --short HEAD)"
+
+echo "==> Removing stale GCC prebuilts to prevent 'Cannot remove project' sync errors"
+rm -rf prebuilts/gcc 2>/dev/null || true
 
 echo "==> Syncing sources through Crave"
 /opt/crave/resync.sh
@@ -123,16 +132,18 @@ unset CCACHE_EXEC
 set +e
 source build/envsetup.sh
 envsetup_status=$?
-breakfast "${DEVICE}" userdebug
-breakfast_status=$?
 set -e
 
-if [[ "${envsetup_status}" -ne 0 || "${breakfast_status}" -ne 0 ]]; then
-  echo "WARNING: Android environment setup returned envsetup=${envsetup_status}, breakfast=${breakfast_status}; continuing without ccache"
+if [[ "${envsetup_status}" -ne 0 ]]; then
+  echo "WARNING: Android environment setup returned envsetup=${envsetup_status}; continuing without ccache"
 fi
 
-echo "==> Building ${DEVICE}"
-mka bacon
+echo "==> Building ${DEVICE} (halogenOS)"
+if [[ "${NOCLEAN}" == "1" ]]; then
+  build full "${XOS_TARGET}" noclean
+else
+  build full "${XOS_TARGET}"
+fi
 
 shopt -s nullglob
 RELEASE_ASSETS=(out/target/product/${DEVICE}/*.zip)
@@ -144,7 +155,7 @@ upload_github_release() {
 
   echo "==> Creating GitHub release in ${GITHUB_RELEASE_REPO}"
   release_tag="gemstone-$(date -u +%Y.%m.%d-%H%M)"
-  release_title="crDroid ${ROM_BRANCH} for ${DEVICE} — ${release_tag}"
+  release_title="halogenOS ${ROM_BRANCH} for ${DEVICE} — ${release_tag}"
   release_notes="$(printf 'Automated Crave build for Xiaomi %s.\n\nBuild device: %s\nROM branch: %s\nManifest: %s@%s\nManifest revision: %s\n' \
     "${DEVICE}" "${DEVICE}" "${ROM_BRANCH}" "${ROM_MANIFEST_URL}" "${ROM_MANIFEST_BRANCH}" \
     "$(git -C .repo/local_manifests rev-parse HEAD)")"

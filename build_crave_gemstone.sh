@@ -8,8 +8,6 @@ ROM_BRANCH="XOS-16.2"
 DEVICE="gemstone"
 # halogenOS (XOS) lunch target: aosp_<device>-bp4a-userdebug
 XOS_TARGET="aosp_${DEVICE}-bp4a-userdebug"
-# Set NOCLEAN=1 to skip 'm clean' before building
-NOCLEAN="${NOCLEAN:-0}"
 GITHUB_RELEASE_REPO="IamCharvik/roms"
 UPLOAD_GITHUB_RELEASE="${UPLOAD_GITHUB_RELEASE:-0}"
 UPLOAD_GOFILE="${UPLOAD_GOFILE:-1}"
@@ -139,11 +137,7 @@ if [[ "${envsetup_status}" -ne 0 ]]; then
 fi
 
 echo "==> Building ${DEVICE} (halogenOS)"
-if [[ "${NOCLEAN}" == "1" ]]; then
-  build full "${XOS_TARGET}" noclean
-else
-  build full "${XOS_TARGET}"
-fi
+build full "${XOS_TARGET}"
 
 shopt -s nullglob
 RELEASE_ASSETS=(out/target/product/${DEVICE}/*.zip)

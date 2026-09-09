@@ -104,9 +104,6 @@ test -f .repo/local_manifests/local_manifest.xml || {
 
 echo "Manifest revision: $(git -C .repo/local_manifests rev-parse --short HEAD)"
 
-echo "==> Removing stale GCC prebuilts to prevent 'Cannot remove project' sync errors"
-rm -rf prebuilts/gcc 2>/dev/null || true
-
 echo "==> Syncing sources through Crave"
 /opt/crave/resync.sh
 

@@ -47,6 +47,27 @@ install_jq_if_missing() {
   fi
 }
 
+install_pillow_if_missing() {
+  if python3 -c 'import PIL' >/dev/null 2>&1; then
+    return
+  fi
+
+  echo "Pillow (PIL) is missing; installing it in the temporary Crave build environment"
+
+  if command -v pip3 >/dev/null 2>&1; then
+    pip3 install --quiet Pillow || pip3 install --quiet --break-system-packages Pillow
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo -n apt-get update
+    sudo -n apt-get install -y --no-install-recommends python3-pil
+  elif [[ "$(id -u)" -eq 0 ]]; then
+    apt-get update
+    apt-get install -y --no-install-recommends python3-pil
+  else
+    echo "ERROR: Pillow is missing and package installation is unavailable" >&2
+    exit 1
+  fi
+}
+
 if [[ "${UPLOAD_GITHUB_RELEASE}" == "1" || "${UPLOAD_GOFILE}" == "1" ]]; then
   if ! command -v curl >/dev/null 2>&1; then
     echo "WARNING: curl is unavailable; post-build uploads will be skipped" >&2
@@ -120,6 +141,7 @@ for required_path in \
 done
 
 echo "==> Preparing ${DEVICE}"
+install_pillow_if_missing
 export USE_CCACHE=0
 export CCACHE_DISABLE=1
 unset CCACHE_EXEC

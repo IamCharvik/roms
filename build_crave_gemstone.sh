@@ -48,24 +48,47 @@ install_jq_if_missing() {
 }
 
 install_pillow_if_missing() {
+  trap - ERR
+  trap 'trap handle_error ERR' RETURN
+  local -
+  set +e
+
   if python3 -c 'import PIL' >/dev/null 2>&1; then
-    return
+    return 0
   fi
 
   echo "Pillow (PIL) is missing; installing it in the temporary Crave build environment"
 
-  if command -v pip3 >/dev/null 2>&1; then
-    pip3 install --quiet Pillow || pip3 install --quiet --break-system-packages Pillow
-  elif command -v sudo >/dev/null 2>&1; then
-    sudo -n apt-get update
-    sudo -n apt-get install -y --no-install-recommends python3-pil
+  # apt first
+  if command -v sudo >/dev/null 2>&1; then
+    sudo -n apt-get update || echo "WARNING: apt-get update failed; trying install anyway" >&2
+    if sudo -n apt-get install -y --no-install-recommends python3-pil; then
+      python3 -c 'import PIL' >/dev/null 2>&1 && return 0
+    fi
+    echo "WARNING: apt install of python3-pil failed; falling back to pip" >&2
   elif [[ "$(id -u)" -eq 0 ]]; then
-    apt-get update
-    apt-get install -y --no-install-recommends python3-pil
-  else
-    echo "ERROR: Pillow is missing and package installation is unavailable" >&2
-    exit 1
+    apt-get update || echo "WARNING: apt-get update failed; trying install anyway" >&2
+    if apt-get install -y --no-install-recommends python3-pil; then
+      python3 -c 'import PIL' >/dev/null 2>&1 && return 0
+    fi
+    echo "WARNING: apt install of python3-pil failed; falling back to pip" >&2
   fi
+
+  # pip fallback
+  if command -v pip3 >/dev/null 2>&1; then
+    if pip3 install --quiet Pillow || pip3 install --quiet --break-system-packages Pillow; then
+      python3 -c 'import PIL' >/dev/null 2>&1 && return 0
+    fi
+  elif command -v python3 >/dev/null 2>&1 && python3 -m pip --version >/dev/null 2>&1; then
+    if python3 -m pip install --quiet Pillow || python3 -m pip install --quiet --break-system-packages Pillow; then
+      python3 -c 'import PIL' >/dev/null 2>&1 && return 0
+    fi
+  fi
+
+  python3 -c 'import PIL' >/dev/null 2>&1 || {
+    echo "ERROR: Pillow installation failed (apt + pip both failed)" >&2
+    return 1
+  }
 }
 
 if [[ "${UPLOAD_GITHUB_RELEASE}" == "1" || "${UPLOAD_GOFILE}" == "1" ]]; then

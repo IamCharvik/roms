@@ -53,40 +53,40 @@ install_pillow_if_missing() {
   local -
   set +e
 
-  if python3 -c 'import PIL' >/dev/null 2>&1; then
+  if python3 -c 'import PIL; import numpy' >/dev/null 2>&1; then
     return 0
   fi
 
-  echo "Pillow (PIL) is missing; installing it in the temporary Crave build environment"
+  echo "Python bootanimation deps (PIL/numpy) are missing; installing them in the temporary Crave build environment"
 
-  # apt first
+  # apt first (both packages together)
   if command -v sudo >/dev/null 2>&1; then
     sudo -n apt-get update || echo "WARNING: apt-get update failed; trying install anyway" >&2
-    if sudo -n apt-get install -y --no-install-recommends python3-pil; then
-      python3 -c 'import PIL' >/dev/null 2>&1 && return 0
+    if sudo -n apt-get install -y --no-install-recommends python3-pil python3-numpy; then
+      python3 -c 'import PIL; import numpy' >/dev/null 2>&1 && return 0
     fi
-    echo "WARNING: apt install of python3-pil failed; falling back to pip" >&2
+    echo "WARNING: apt install of python3-pil/python3-numpy failed; falling back to pip" >&2
   elif [[ "$(id -u)" -eq 0 ]]; then
     apt-get update || echo "WARNING: apt-get update failed; trying install anyway" >&2
-    if apt-get install -y --no-install-recommends python3-pil; then
-      python3 -c 'import PIL' >/dev/null 2>&1 && return 0
+    if apt-get install -y --no-install-recommends python3-pil python3-numpy; then
+      python3 -c 'import PIL; import numpy' >/dev/null 2>&1 && return 0
     fi
-    echo "WARNING: apt install of python3-pil failed; falling back to pip" >&2
+    echo "WARNING: apt install of python3-pil/python3-numpy failed; falling back to pip" >&2
   fi
 
-  # pip fallback
+  # pip fallback (both packages together)
   if command -v pip3 >/dev/null 2>&1; then
-    if pip3 install --quiet Pillow || pip3 install --quiet --break-system-packages Pillow; then
-      python3 -c 'import PIL' >/dev/null 2>&1 && return 0
+    if pip3 install --quiet Pillow numpy || pip3 install --quiet --break-system-packages Pillow numpy; then
+      python3 -c 'import PIL; import numpy' >/dev/null 2>&1 && return 0
     fi
   elif command -v python3 >/dev/null 2>&1 && python3 -m pip --version >/dev/null 2>&1; then
-    if python3 -m pip install --quiet Pillow || python3 -m pip install --quiet --break-system-packages Pillow; then
-      python3 -c 'import PIL' >/dev/null 2>&1 && return 0
+    if python3 -m pip install --quiet Pillow numpy || python3 -m pip install --quiet --break-system-packages Pillow numpy; then
+      python3 -c 'import PIL; import numpy' >/dev/null 2>&1 && return 0
     fi
   fi
 
-  python3 -c 'import PIL' >/dev/null 2>&1 || {
-    echo "ERROR: Pillow installation failed (apt + pip both failed)" >&2
+  python3 -c 'import PIL; import numpy' >/dev/null 2>&1 || {
+    echo "ERROR: Python bootanimation deps installation failed (apt + pip both failed)" >&2
     return 1
   }
 }

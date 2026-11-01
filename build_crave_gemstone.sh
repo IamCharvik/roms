@@ -176,7 +176,7 @@ unset CCACHE_EXEC
 set +e
 source build/envsetup.sh
 envsetup_status=$?
-breakfast "${DEVICE}" userdebug
+breakfast "${DEVICE}" user
 breakfast_status=$?
 set -e
 

@@ -157,12 +157,15 @@ for required_path in \
   vendor/xiaomi/gemstone \
   vendor/xiaomi/sm6375-common \
   kernel/xiaomi/sm6375 \
-  hardware/xiaomi; do
+  hardware/xiaomi \
+  vendor/lineage-priv/keys/keys.mk; do
   test -e "${required_path}" || {
     echo "ERROR: synced path is missing: ${required_path}" >&2
     exit 1
   }
 done
+
+echo "Signing key: $(openssl x509 -in vendor/lineage-priv/keys/testkey.x509.pem -noout -fingerprint -sha256)"
 
 echo "==> Preparing ${DEVICE}"
 install_pillow_if_missing
